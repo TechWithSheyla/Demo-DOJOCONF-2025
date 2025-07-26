@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Serverless Application Model template describing a security configuration remediation function.
+Resources:
+  shLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+      Description: ''
+      MemorySize: 128
+      Timeout: 600
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.11
+      Architectures:
+        - x86_64
+      EphemeralStorage:
+        Size: 512
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: arn:aws:sns:{region}:{account}:SHTopic
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 21600
+        MaximumRetryAttempts: 2
+        DestinationConfig: {}
+      PackageType: Zip
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource: arn:aws:sns:{region}:{account}:SHTopic
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+              Resource: arn:aws:logs:{region}:{account}:*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource:
+                - >-
+                  arn:aws:logs:{region}:{account}:log-group:/aws/lambda/sh_Lambda:*
+            - Effect: Allow
+              Action:
+                - s3:PutBucketPublicAccessBlock
+                - s3:GetBucketPublicAccessBlock
+              Resource: arn:aws:s3:::*
+            - Effect: Allow
+              Action:
+                - securityhub:BatchUpdateFindings
+              Resource: arn:aws:securityhub:{region}:{account}:hub/default
+              Condition:
+                StringEquals:
+                  securityhub:ASFFSyntaxPath/Compliance.Status: FAILED
+                  securityhub:ASFFSyntaxPath/GeneratorId: security-control/S3.8
+            - Effect: Allow
+              Action:
+                - securityhub:GetFindings
+              Resource: arn:aws:securityhub:{region}:{account}:hub/default
+              Condition:
+                StringEquals:
+                  securityhub:ASFFSyntaxPath/Compliance.SecurityControlId: S3.8
+      RecursiveLoop: Terminate
+      SnapStart:
+        ApplyOn: None
+      Events:
+        EventBridgeRule1:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - aws.securityhub
+              detail-type:
+                - Security Hub Findings - Imported
+              detail:
+                findings:
+                  Compliance:
+                    Status:
+                      - FAILED
+                  RecordState:
+                    - ACTIVE
+                  Severity:
+                    Label:
+                      - CRITICAL
+                      - HIGH
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto

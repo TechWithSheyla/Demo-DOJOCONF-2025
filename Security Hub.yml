@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Enable AWS Security Hub with foundational security standards'
+
+Resources:
+  SecurityHub:
+    Type: AWS::SecurityHub::Hub
+  
+  # Enable AWS Foundational Security Standard
+  FoundationalStandard:
+    Type: AWS::SecurityHub::Standard
+    Properties:
+      StandardsArn: !Sub 'arn:aws:securityhub:${AWS::Region}::standard/aws-foundational-security/v/1.0.0'
+    DependsOn: SecurityHub
+
+Outputs:
+  SecurityHubArn:
+    Description: 'ARN of the Security Hub'
+    Value: !Ref SecurityHub
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityHubArn'

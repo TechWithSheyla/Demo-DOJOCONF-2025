@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for EventBridge Security Hub Findings Rule
+Resources:
+  Ruleb216b8ad:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: SHFindingsRule
+      EventPattern: >-
+        {"source":["aws.securityhub"],"detail-type":["Security Hub Findings -
+        Imported"],"detail":{"findings":{"Compliance":{"Status":["FAILED"]},"RecordState":["ACTIVE"],"Severity":{"Label":["CRITICAL","HIGH"]}}}}
+      State: ENABLED
+      Description: Rule for SH Findings
+      EventBusName: default
+      Targets:
+        - Id: {ID}
+          Arn:
+            Fn::Sub: arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:SHTopic
+          InputTransformer:
+            InputPathsMap:
+              account: $.account
+              description: $.detail.findings[0].Description
+              id: $.id
+              region: $.region
+              resource_id: $.detail.findings[0].Resources[0].Id
+              resource_state: $.detail.findings[0].RecordState
+              resource_type: $.detail.findings[0].Resources[0].Type
+              resources: $.resources
+              severity: $.detail.findings[0].Severity.Label
+              time: $.time
+              title: $.detail.findings[0].Title
+            InputTemplate: |-
+              {
+                "Id": <id>,
+                "Cuenta": <account>,
+                "Fecha y hora": <time>,
+                "Región": <region>,
+                "Título del hallazgo": <title>,
+                "Severidad" : <severity>,
+                "Descripción del hallazgo": <description>,
+                "Tipo de recurso": <resource_type>,
+                "Id del recurso": <resource_id>,
+                "Estado del hallazgo": <resource_state>
+              }
+        - Id: {ID}
+          Arn:
+            Fn::Sub: >-
+              arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:sh_Lambda
+          RoleArn: >-
+            arn:aws:iam::{AWS}:role/service-role/Amazon_EventBridge_Invoke_Lambda_
+Parameters: {}

@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Enable Amazon Inspector V2 for vulnerability assessments'
+
+Resources:
+  InspectorV2:
+    Type: AWS::Inspector2::Enabler
+    Properties:
+      AccountIds:
+        - !Ref 'AWS::AccountId'
+      ResourceTypes:
+        - 'EC2'
+        - 'ECR'
+        - 'LAMBDA'
+        - 'LAMBDA_CODE'
+
+  # SNS Topic for Inspector findings (optional)
+  InspectorTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: InspectorFindings
+      DisplayName: 'Inspector Vulnerability Findings'
+
+  # EventBridge Rule for Inspector findings
+  InspectorEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: 'Inspector findings rule'
+      EventPattern:
+        source:
+          - 'aws.inspector2'
+        detail-type:
+          - 'Inspector2 Finding'
+      State: ENABLED
+      Targets:
+        - Arn: !Ref InspectorTopic
+          Id: 'InspectorTarget'
+
+  # IAM Role for Inspector (if needed for custom configurations)
+  InspectorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+      

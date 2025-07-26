@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for SNS Topic SHTopic with email and HTTPS subscriptions'
+
+Parameters:
+  EmailEndpoint:
+    Type: String
+    Default: '{email account}'
+    Description: 'Email address for SNS subscription'
+    
+  HttpsEndpoint:
+    Type: String
+    Default: '{URL}'
+    Description: 'HTTPS endpoint for SNS subscription'
+
+Resources:
+  SHTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: SHTopic
+      DisplayName: SHTopic
+      
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref SHTopic
+      Endpoint: !Ref EmailEndpoint
+      
+  HttpsSubscription:
+    Type: AWS::SNS::Subscription
+   

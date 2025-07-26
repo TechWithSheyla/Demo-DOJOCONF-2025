@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Enable Amazon GuardDuty with threat detection'
+
+Parameters:
+  FindingPublishingFrequency:
+    Type: String
+    Default: 'FIFTEEN_MINUTES'
+    AllowedValues:
+      - 'FIFTEEN_MINUTES'
+      - 'ONE_HOUR'
+      - 'SIX_HOURS'
+    Description: 'Frequency for publishing findings to CloudWatch Events'
+
+Resources:
+  GuardDutyDetector:
+    Type: AWS::GuardDuty::Detector
+    Properties:
+      Enable: true
+      FindingPublishingFrequency: !Ref FindingPublishingFrequency
+      DataSources:
+        S3Logs:
+          Enable: true
+        KubernetesConfiguration:
+          AuditLogs:
+            Enable: true
+        MalwareProtection:
+          ScanEc2InstanceWithFindings:
+            EbsVolumes: true
+      Tags:
+        - Key: 'Service'
+          Value: 'GuardDuty'
+        - Key: 'Environment'
+          Value: 'Production'
+
+  # SNS Topic for GuardDuty findings (optional)
+  GuardDutyTopic:
+   

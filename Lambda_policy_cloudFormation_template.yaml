@@ -1,0 +1,36 @@
+#CloudFormation template for IAM policy
+Type: AWS::IAM::Policy
+Properties:
+  PolicyName: Policy 1
+  PolicyDocument:
+    Version: 2012-10-17
+    Statement:
+      - Effect: Allow
+        Action: logs:CreateLogGroup
+        Resource: arn:aws:logs:us-east-1:{account}:*
+      - Effect: Allow
+        Action:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        Resource:
+          - arn:aws:logs:us-east-1:{account}:log-group:/aws/lambda/sh_Lambda:*
+      - Effect: Allow
+        Action:
+          - s3:PutBucketPublicAccessBlock
+          - s3:GetBucketPublicAccessBlock
+        Resource: arn:aws:s3:::*
+      - Effect: Allow
+        Action:
+          - securityhub:BatchUpdateFindings
+        Resource: arn:aws:securityhub:us-east-1:{account}:hub/default
+        Condition:
+          StringEquals:
+            securityhub:ASFFSyntaxPath/Compliance.Status: FAILED
+            securityhub:ASFFSyntaxPath/GeneratorId: security-control/S3.8
+      - Effect: Allow
+        Action:
+          - securityhub:GetFindings
+        Resource: arn:aws:securityhub:us-east-1:{account}:hub/default
+        Condition:
+          StringEquals:
+            securityhub:ASFFSyntaxPath/Compliance.SecurityControlId: S3.8
